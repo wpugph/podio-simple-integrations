@@ -96,6 +96,8 @@ class PD_Simple_Integrations {
 
 		register_activation_hook( $this->file, array( $this, 'install' ) );
 
+		register_deactivation_hook( $this->file, array( $this, 'plugin_deactivated' ) );
+
 		// Load frontend JS & CSS
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_styles' ), 10 );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 10 );
@@ -109,10 +111,28 @@ class PD_Simple_Integrations {
 			$this->admin = new PD_Simple_Integrations_Admin_API();
 		}
 
+		if ( !( class_exists ( 'Podio' ) ) ) {
+			add_action( 'admin_init', array( $this, 'deactivate_plugin_conditional' ), 10, 1 );
+			add_action( 'admin_notices', array( $this, 'podio_modules_missing' ), 10, 1 );
+		}
+
 		// Handle localisation
 		$this->load_plugin_textdomain();
 		add_action( 'init', array( $this, 'load_localisation' ), 0 );
 	} // End __construct ()
+
+	public function deactivate_plugin_conditional() {
+	    if ( is_plugin_active('pd-simple-integrations/pd-simple-integrations.php') ) {
+	    	deactivate_plugins('pd-simple-integrations/pd-simple-integrations.php');
+	    }
+	}
+
+	public function podio_modules_missing () {
+    	$class = 'notice notice-error';
+    	$message = __( 'Podio Integration Plugin Deactivated or cannot activate because of the missing / deactivated Podio Helper plugin', 'pd-simple-integrations' );
+    	printf( '<div class="%1$s"><p>%2$s</p></div>', $class, $message );
+    }
+
 
 	/**
 	 * Wrapper function to register a new post type
@@ -254,13 +274,64 @@ class PD_Simple_Integrations {
 
 	/**
 	 * Installation. Runs on activation.
+	 * If reset option is still new meaning this is the first time th plugins is installed, it will call all the default values
 	 * @access  public
 	 * @since   1.0.0
 	 * @return  void
 	 */
 	public function install () {
-		$this->_log_version_number();
+//		add_action( 'admin_notices', 'podio_modules_deactivate' );
+			add_action( 'admin_notices', array( $this, 'podio_modules_deactivate1' ), 10, 1 );
+
+//		if ( class_exists ( 'Podio' ) ) {
+			$this->_log_version_number();
+			if ( ( empty ( get_option ('wpt_cb_reset') ) ) ) {
+				$this->default_option_values ();
+			}
+//		} else {
+			//deactivate_plugins( '/pd-helper/pd-helper.php' );
+			// break;
+//		}
 	} // End install ()
+
+	/**
+	 * This contains the default values
+	 * @access  public
+	 * @since   1.0.0
+	 * @return  void
+	 */
+
+	public function default_option_values () {
+		add_option ( 'pdhs1_cb_reset', '' ); // assign on to set checkboxes
+	}
+
+	/**
+	 *  Deletes all options in the specified array
+	 * @access  public
+	 * @since   1.0.0
+	 * @param  array $option_names      names of the options to be deleted
+	 * @return  void
+	 */
+	public function remove_all_options ( $option_names ) {
+		foreach ( $option_names as $option_name ) {
+			delete_option ( $option_name );
+		}
+	}
+
+	/**
+	 *  Runs when plugin is deactivated.
+	 * @access  public
+	 * @since   1.0.0
+	 * @return  void
+	 */
+	public function plugin_deactivated () {
+		if ( !empty ( get_option ( 'pdhs1_cb_reset' ) ) ) {
+			$option_names = array(
+					'pdhs1_cb_reset',
+				);
+			$this->remove_all_options ( $option_names );
+		}
+	}
 
 	/**
 	 * Log the plugin version number.

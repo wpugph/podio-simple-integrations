@@ -42,6 +42,7 @@ function PD_Simple_Integrations () {
 	}
 
 	return $instance;
+
 }
 
 PD_Simple_Integrations();

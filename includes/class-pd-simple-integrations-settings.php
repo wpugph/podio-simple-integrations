@@ -39,7 +39,7 @@ class PD_Simple_Integrations_Settings {
 	public function __construct ( $parent ) {
 		$this->parent = $parent;
 
-		$this->base = 'wpt_';
+		$this->base = 'pdsi1_';
 
 		// Initialise settings
 		add_action( 'init', array( $this, 'init_settings' ), 11 );
@@ -111,6 +111,13 @@ class PD_Simple_Integrations_Settings {
 			'title'					=> __( 'Standard', 'pd-simple-integrations' ),
 			'description'			=> __( 'These are fairly standard form input fields.', 'pd-simple-integrations' ),
 			'fields'				=> array(
+				array(
+					'id' 			=> 'cb_reset',
+					'label'			=> __( 'Reset All when deactivated', 'pd-simple-integrations' ),
+					'description'	=> __( '', 'pd-simple-integrations' ),
+					'type'			=> 'checkbox',
+					'default'		=> ''
+				),
 				array(
 					'id' 			=> 'text_field',
 					'label'			=> __( 'Some Text' , 'pd-simple-integrations' ),
